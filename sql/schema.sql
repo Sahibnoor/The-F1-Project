@@ -1,4 +1,4 @@
-CREATE TABLE races (
+CREATE TABLE IF NOT EXISTS races (
     raceId INTEGER PRIMARY KEY,
     year INTEGER,
     round INTEGER,
@@ -6,19 +6,19 @@ CREATE TABLE races (
     circuit TEXT,
     date TEXT
 );
-CREATE TABLE drivers (
+CREATE TABLE IF NOT EXISTS  drivers (
     driverId TEXT PRIMARY KEY,  -- using Ergast driverId (string) as primary key
     code TEXT,
     firstName TEXT,
     lastName TEXT,
     nationality TEXT
 );
-CREATE TABLE constructors (
+CREATE TABLE IF NOT EXISTS constructors (
     constructorId TEXT PRIMARY KEY,
     name TEXT,
     nationality TEXT
 );
-CREATE TABLE results (
+CREATE TABLE IF NOT EXISTS  results (
     resultId INTEGER PRIMARY KEY AUTOINCREMENT,
     raceId INTEGER,
     driverId TEXT,
@@ -31,7 +31,7 @@ CREATE TABLE results (
     FOREIGN KEY(driverId) REFERENCES drivers(driverId),
     FOREIGN KEY(constructorId) REFERENCES constructors(constructorId)
 );
-CREATE TABLE pitstops (
+CREATE TABLE IF NOT EXISTS  pitstops (
     raceId INTEGER,
     driverId TEXT,
     stop INTEGER,
@@ -41,7 +41,7 @@ CREATE TABLE pitstops (
     FOREIGN KEY(raceId) REFERENCES races(raceId),
     FOREIGN KEY(driverId) REFERENCES drivers(driverId)
 );
-CREATE TABLE laptimes (
+CREATE TABLE IF NOT EXISTS  laptimes (
     raceId INTEGER,
     driverId TEXT,
     lap INTEGER,
