@@ -37,11 +37,11 @@ if __name__ == "__main__":
         if not years:
             print("Please provide at least one year with --year when running --races.")
         else:
-            run_scraper("scrape_races.py", args=years)
+            run_scraper("races.py", args=years)
             
     if args.results:
         # The results scraper does not need year arguments as it queries the DB.
-        run_scraper("scrape_results.py")
+        run_scraper("results.py")
     
     if not (args.races or args.results):
         print("No scraper selected. Use --races, --results, or both.")
