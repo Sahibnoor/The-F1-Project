@@ -125,48 +125,6 @@ def clean_race_details(df):
     df = df.drop('DRIVER', axis=1)
     df.columns = final_columns
 
-    # cleaned_df = pd.DataFrame(columns=final_columns)
-
-    # cleaned_df['year']
-    # # Scraped data has 7 columns, which we can map directly
-    # if len(df.columns) >= 7:
-    #     cleaned_df['pos'] = df[0]
-    #     cleaned_df['car_number'] = df[1]
-    #     cleaned_df['driver_full_name'] = df[2]
-    #     cleaned_df['team'] = df[3]
-    #     cleaned_df['laps'] = df[4]
-    #     cleaned_df['time'] = df[5]
-    #     cleaned_df['points'] = df[6]
-        
-    #     # Split the Driver Name into first and last names
-    #     cleaned_df['driver_code'] = cleaned_df['driver_full_name'].str[-3:]
-    #     cleaned_df['driver_name_only'] = cleaned_df['driver_full_name'].str[:-3]
-    #     name_parts = cleaned_df['driver_name_only'].str.strip().str.split(expand=True)
-    #     cleaned_df['driver_first_name'] = name_parts[0]
-    #     cleaned_df['driver_last_name'] = name_parts.iloc[:, 1].fillna('')
-
-    # # Handle cases where the table structure is different
-    # else:
-    #     cleaned_df['pos'] = df[0]
-    #     cleaned_df['driver_full_name'] = df[1]
-    #     cleaned_df['team'] = df[2]
-    #     cleaned_df['laps'] = df[3]
-    #     cleaned_df['time'] = df[4]
-    #     cleaned_df['points'] = df[5]
-    #     cleaned_df['driver_code'] = cleaned_df['driver_full_name'].str[-3:]
-    #     cleaned_df['driver_name_only'] = cleaned_df['driver_full_name'].str[:-3]
-    #     name_parts = cleaned_df['driver_name_only'].str.strip().str.split(expand=True)
-    #     cleaned_df['driver_first_name'] = name_parts[0]
-    #     cleaned_df['driver_last_name'] = name_parts.iloc[:, 1].fillna('')
-    
-    # # Add metadata columns
-    # cleaned_df['year'] = df['year']
-    # cleaned_df['grand_prix'] = df['grand_prix']
-
-    # # Final cleaning and reordering
-    # cleaned_df.drop(columns=['driver_full_name', 'driver_name_only'], errors='ignore', inplace=True)
-    
-    # Replace empty strings with None for database compatibility
     for col in df.columns:
         df[col] = df[col].replace('', None, regex=True)
     
@@ -204,15 +162,8 @@ def upsert_to_psql(df, table_name: str, conflict_target: tuple):
                 VALUES %s
                 ON CONFLICT {str(conflict_target).replace("'", '"')} DO UPDATE SET
                 {update_cols_str};
-                """
+                """ 
 
-                # upsert_query = f"""
-                # INSERT INTO {table_name} ({columns})
-                # VALUES %s
-                # ON CONFLICT {str(conflict_target).replace("'", '"')} DO NOTHING;
-                # """
-
-                
                 # Execute the upsert using execute_values for efficiency
                 extras.execute_values(
                     cur,
@@ -230,6 +181,7 @@ def upsert_to_psql(df, table_name: str, conflict_target: tuple):
 
 
 if __name__ == "__main__":
+
     if len(sys.argv) < 2:
         print("Error: Please provide a year or a range of years to scrape.")
         print("Usage: python race_details_scraper.py <YEAR> [END_YEAR]")
