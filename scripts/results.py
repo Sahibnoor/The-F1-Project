@@ -28,7 +28,7 @@ def get_race_links_from_psql(start_year: int, end_year: int):
     """
     query = """
     SELECT year, race_link, grand_prix
-    FROM races
+    FROM races_old
     WHERE year >= %s AND year <= %s
     ORDER BY year, date ASC;
     """
@@ -105,8 +105,8 @@ def clean_race_details(df):
 
     # Define the final column names to match the psql table schema
     final_columns = [
-        'year', 'grand_prix', 'pos', 'car_number', 'driver_first_name', 
-        'driver_last_name', 'team', 'laps', 'time', 'points'
+        'year', 'grand_prix', 'pos', 'car_number', 'first_name', 
+        'last_name', 'team', 'laps', 'time', 'points'
     ]
 
     # Add the first name and last name columns at their appropriate positions
@@ -136,17 +136,21 @@ def clean_race_details(df):
 
     return df
 
-def upsert_to_psql(df, table_name: str, conflict_target: tuple):
+def upsert_to_psql(df, table_name: str, conflict_target: tuple, year: int, grand_prix: str, failed_upserts: list):
     """
     Upserts DataFrame records into a PostgreSQL table.
     """
     if df.empty:
         print("DataFrame is empty, nothing to upsert.")
-        return
-        
+        return failed_upserts
+    
     with conn() as connection:
         with connection.cursor() as cur:
             try:
+                # FIX: Drop duplicates within the DataFrame before upserting.
+                # This prevents the CardinalityViolation error.
+                df.drop_duplicates(subset=list(conflict_target), inplace=True)
+                
                 # Convert DataFrame to a list of tuples for bulk insertion
                 df_tuples = [tuple(row) for row in df.itertuples(index=False)]
 
@@ -177,8 +181,11 @@ def upsert_to_psql(df, table_name: str, conflict_target: tuple):
 
             except Exception as e:
                 print(f"An error occurred during upsert: {e}")
+                failed_upserts.append((year, grand_prix))
                 connection.rollback()
-
+            
+            finally:
+                return failed_upserts
 
 if __name__ == "__main__":
 
@@ -201,11 +208,14 @@ if __name__ == "__main__":
         print(f"No race links found in the 'races' table for years {start_year}-{end_year}. Please run the races scraper first.")
         sys.exit(0)
 
+    failed_upserts = []
     for year, link, grand_prix in race_links:
         detailed_data_df = scrape_race_details(link, year, grand_prix)
         if not detailed_data_df.empty:
             cleaned_df = clean_race_details(detailed_data_df)
-            upsert_to_psql(cleaned_df, "race_results", ("year", "grand_prix", "car_number"))
-        
+            failed_upserts = upsert_to_psql(cleaned_df, "results", ("year", "grand_prix", "car_number"), 
+                                            year, grand_prix, failed_upserts)
         # Add a delay between requests to be polite to the server
         time.sleep(random.randint(2, 5))
+    for i in failed_upserts:
+        print(i)
